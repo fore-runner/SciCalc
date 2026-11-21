@@ -92,6 +92,9 @@ def parse_term():
 def parse_factor():
     global position
 
+    if position >= len(tokens):
+        raise ValueError("Unexpected end of expression")
+
     token = tokens[position]
 
     if token == "+":
@@ -102,19 +105,40 @@ def parse_factor():
         position += 1
         return -parse_factor()
 
-    elif token == "(":
+    else:
+        return parse_power()
+
+def parse_power():
+    global position
+
+    base = parse_primary()
+
+    if position < len(tokens) and tokens[position] == "^":
         position += 1
+        exponent = parse_factor()
+        return base ** exponent
 
+    return base
+
+def parse_primary():
+    global position
+
+    if position >= len(tokens):
+        raise ValueError("Unexpected end of expression")
+    
+    token=tokens[position]
+
+    if token == "(":
+        position += 1
         result = parse_expression()
-
-        if tokens[position] != ")":
+    
+        if position >= len(tokens) or tokens[position] != ")":
             raise ValueError("Missing closing bracket")
-
+    
         position += 1
         return result
-
     else:
-        position += 1
+        position+=1
         return float(token)
 
 
@@ -123,9 +147,12 @@ def calculate(expression):
 
     tokens = tokenize(expression)
     position = 0
-
+    
     result = parse_expression()
 
+    if position < len(tokens):
+        raise ValueError("Unexpected token")
+    
     return result
 
 
@@ -135,9 +162,10 @@ def main():
 
         if expression.lower() == "exit":
             break
-
-        result = calculate(expression)
-        print(result)
-
+        try:
+            result = calculate(expression)
+            print(result)
+        except( ValueError, IndexError, ZeroDivisionError ) as error:
+            print(f"[ERROR]{error}")
 
 main()
